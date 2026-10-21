@@ -31,7 +31,9 @@ Your plan autosaves per address: a plan made at `http://localhost:8765` is not v
 
 ## On your phone
 
-Open the web address (GitHub Pages) in Chrome on Android or Safari on iPhone, then add it to the home screen: in Chrome, menu ⋮ → "Add to Home screen"; in Safari, the share button → "Add to Home Screen". It then opens full screen like an app.
+Kalke is online at **https://fbn007.github.io/kalke-/** (GitHub Pages, published from the `gh-pages` branch of this repository).
+
+Open that address in Chrome on Android or Safari on iPhone, then add it to the home screen: in Chrome, menu ⋮ → "Add to Home screen"; in Safari, the share button → "Add to Home Screen". It then opens full screen like an app.
 
 On a phone the tools sit in a dock at the bottom: Line, Freehand, Marker, Edit, Erase, Undo and More (search, base map, tracing paper, flight settings, list, export).
 
