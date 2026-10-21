@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#22262c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kalke">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <title>Kalke · FPV route planner</title>
+  <meta name="description" content="Lay tracing paper over satellite imagery and plan FPV drone routes, gaps and racing lines.">
+
+  <!-- Fonts (falls back to system fonts when offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap">
+
+  <!-- Leaflet 1.9.4 + Leaflet-Geoman 2.20.2 (drawing / editing plugin) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@geoman-io/leaflet-geoman-free@2.20.2/dist/leaflet-geoman.css">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-line" viewBox="0 0 24 24"><path d="M4 18 10 8l5 6 5-9"/><circle cx="4" cy="18" r="1.8"/><circle cx="10" cy="8" r="1.8"/><circle cx="15" cy="14" r="1.8"/><circle cx="20" cy="5" r="1.8"/></symbol>
+    <symbol id="i-free" viewBox="0 0 24 24"><path d="M3 16c3-6 5-9 7-6s1 8 4 6 4-8 7-9"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 19 12 7l8 10"/><path d="M10.5 5.5h3v3h-3zM2.5 17.5h3v3h-3zM18.5 15.5h3v3h-3z"/></symbol>
+    <symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3 9.5 5.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/></symbol>
+    <symbol id="i-erase" viewBox="0 0 24 24"><path d="m15.5 4 5 5-9.5 9.5H6L3 15.5z"/><path d="m9 10.5 5 5M11 21h10"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M4 9h11a5 5 0 0 1 0 10h-4M8 5 4 9l4 4"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 9H9a5 5 0 0 0 0 10h4M16 5l4 4-4 4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><circle cx="12" cy="12" r="2.2"/></symbol>
+    <symbol id="i-reverse" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M12 19V8M7 13l5-5 5 5M5 4h14"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="9" r="1.5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z"/><path d="m12.5 9.5 5 5M17.5 9.5l-5 5"/></symbol>
+    <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 1v22M1 12h22"/></symbol>
+  </defs>
+</svg>
+
+<aside id="sidebar" aria-label="Planning tools">
+  <header class="brand">
+    <svg class="brand-mark" aria-hidden="true"><use href="#i-mark"/></svg>
+    <div class="brand-text">
+      <h1>Kalke</h1>
+      <p>Tracing paper for FPV route planning</p>
+    </div>
+    <button class="icon-btn only-mobile" id="panel-close" title="Close panel" aria-label="Close panel">
+      <svg><use href="#i-close"/></svg>
+    </button>
+  </header>
+
+  <div class="panel">
+    <label class="field">
+      <span class="field-label">Plan name</span>
+      <input id="plan-name" type="text" placeholder="e.g. Quarry gaps, Saturday session" autocomplete="off" spellcheck="false">
+    </label>
+
+    <form id="search-form" class="search" autocomplete="off">
+      <svg class="search-icon" aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="search-input" type="search" placeholder="Find a place or paste lat, lon" aria-label="Find a place">
+      <button type="button" class="icon-btn" id="locate-btn" title="Go to my location" aria-label="Go to my location">
+        <svg><use href="#i-locate"/></svg>
+      </button>
+      <ul id="search-results" class="search-results" hidden></ul>
+    </form>
+
+    <label class="field">
+      <span class="field-label">Base map</span>
+      <select id="basemap-select">
+        <option value="satellite">Satellite (Esri World Imagery)</option>
+        <option value="hybrid">Satellite with roads and labels</option>
+        <option value="topo">Topographic (Esri)</option>
+        <option value="osm">OpenStreetMap</option>
+      </select>
+    </label>
+  </div>
+
+  <section class="panel" aria-labelledby="h-draw">
+    <h2 id="h-draw">Draw</h2>
+
+    <div class="tool-grid two">
+      <button class="tool" data-tool="line" aria-pressed="false">
+        <svg><use href="#i-line"/></svg><span>Line</span><kbd>L</kbd>
+      </button>
+      <button class="tool" data-tool="freehand" aria-pressed="false">
+        <svg><use href="#i-free"/></svg><span>Freehand</span><kbd>F</kbd>
+      </button>
+    </div>
+
+    <div class="ink-row" role="radiogroup" aria-label="Ink colour for new routes" id="ink-row"></div>
+
+    <h3>Markers</h3>
+    <div class="tool-grid three" id="marker-grid"></div>
+
+    <h3>Adjust</h3>
+    <div class="tool-grid three">
+      <button class="tool compact" data-tool="edit" aria-pressed="false" title="Edit points (E)">
+        <svg><use href="#i-edit"/></svg><span>Edit points</span>
+      </button>
+      <button class="tool compact" data-tool="move" aria-pressed="false" title="Move (M)">
+        <svg><use href="#i-move"/></svg><span>Move</span>
+      </button>
+      <button class="tool compact" data-tool="erase" aria-pressed="false" title="Erase (X)">
+        <svg><use href="#i-erase"/></svg><span>Erase</span>
+      </button>
+    </div>
+
+    <div class="history-row">
+      <button class="btn ghost" id="undo-btn" title="Undo (Ctrl+Z)"><svg><use href="#i-undo"/></svg>Undo</button>
+      <button class="btn ghost" id="redo-btn" title="Redo (Ctrl+Shift+Z)"><svg><use href="#i-redo"/></svg>Redo</button>
+      <button class="btn ghost danger" id="clear-btn" title="Remove everything from the sheet"><svg><use href="#i-trash"/></svg>Clear</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-kalke">
+    <div class="panel-head">
+      <h2 id="h-kalke">Tracing paper</h2>
+      <label class="switch" title="Lay the tracing paper over the map (K)">
+        <input type="checkbox" id="kalke-toggle" checked>
+        <span class="switch-track"></span>
+        <span class="sr-only">Tracing paper on</span>
+      </label>
+    </div>
+
+    <label class="slider">
+      <span class="slider-label">Paper opacity <output id="paper-out">30%</output></span>
+      <input type="range" id="paper-range" min="0" max="95" step="1" value="30">
+    </label>
+
+    <div class="segmented" role="radiogroup" aria-label="Paper tint" id="tint-row">
+      <button type="button" data-tint="vellum" aria-pressed="true">Vellum</button>
+      <button type="button" data-tint="frost" aria-pressed="false">Frost</button>
+      <button type="button" data-tint="night" aria-pressed="false">Night</button>
+    </div>
+
+    <label class="slider">
+      <span class="slider-label">Ink opacity <output id="ink-out">95%</output></span>
+      <input type="range" id="ink-range" min="10" max="100" step="1" value="95">
+    </label>
+
+    <label class="slider">
+      <span class="slider-label">Line weight <output id="weight-out">4 px</output></span>
+      <input type="range" id="weight-range" min="2" max="10" step="1" value="4">
+    </label>
+
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="labels-toggle" checked><span>Distance and name labels</span></label>
+      <label class="check"><input type="checkbox" id="ring-toggle" checked><span>Range ring around takeoff</span></label>
+      <label class="check"><input type="checkbox" id="flow-toggle"><span>Animate flight direction</span></label>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-flight">
+    <h2 id="h-flight">Flight estimate</h2>
+
+    <div class="readout">
+      <div class="readout-main">
+        <span class="readout-value" id="total-distance">0 m</span>
+        <span class="readout-caption" id="total-caption">No routes yet</span>
+      </div>
+    </div>
+
+    <dl class="stats">
+      <div><dt>Flight time</dt><dd id="stat-time">–</dd></div>
+      <div><dt>Battery per run</dt><dd id="stat-battery">–</dd></div>
+      <div><dt>Runs per pack</dt><dd id="stat-runs">–</dd></div>
+      <div><dt>Furthest from takeoff</dt><dd id="stat-range">–</dd></div>
+    </dl>
+
+    <div class="battery" aria-hidden="true">
+      <div class="battery-fill" id="battery-fill"></div>
+      <div class="battery-reserve" id="battery-reserve"></div>
+    </div>
+    <p class="note" id="flight-note">Place a takeoff marker to check your range.</p>
+
+    <div class="inputs">
+      <label class="field small">
+        <span class="field-label">Average speed</span>
+        <span class="unit-input"><input type="number" id="speed-input" min="5" max="250" step="1" value="50"><em id="speed-unit">km/h</em></span>
+      </label>
+      <label class="field small">
+        <span class="field-label">Flight time per pack</span>
+        <span class="unit-input"><input type="number" id="pack-input" min="0.5" max="60" step="0.5" value="4"><em>min</em></span>
+      </label>
+      <label class="field small">
+        <span class="field-label">Keep in reserve</span>
+        <span class="unit-input"><input type="number" id="reserve-input" min="0" max="80" step="5" value="20"><em>%</em></span>
+      </label>
+      <label class="field small">
+        <span class="field-label">Video / link range</span>
+        <span class="unit-input"><input type="number" id="range-input" min="50" max="100000" step="50" value="1200"><em id="range-unit">m</em></span>
+      </label>
+    </div>
+
+    <div class="segmented small" role="radiogroup" aria-label="Units" id="units-row">
+      <button type="button" data-units="metric" aria-pressed="true">Metric</button>
+      <button type="button" data-units="imperial" aria-pressed="false">Imperial</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-items">
+    <h2 id="h-items">On the sheet <span class="count" id="item-count"></span></h2>
+    <ul class="items" id="item-list"></ul>
+    <p class="empty" id="items-empty">Nothing here yet. Draw a line or drop a takeoff marker to start.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-export">
+    <h2 id="h-export">Export</h2>
+    <div class="export-grid">
+      <button class="btn" id="export-geojson"><svg><use href="#i-download"/></svg>GeoJSON</button>
+      <button class="btn" id="export-kml"><svg><use href="#i-download"/></svg>KML</button>
+      <button class="btn" id="export-png"><svg><use href="#i-image"/></svg>Image (PNG)</button>
+      <button class="btn" id="import-btn"><svg><use href="#i-open"/></svg>Open file</button>
+    </div>
+    <input type="file" id="import-input" accept=".geojson,.json,.kml,application/geo+json,application/vnd.google-earth.kml+xml" hidden>
+  </section>
+
+  <details class="panel shortcuts">
+    <summary>Keyboard shortcuts</summary>
+    <dl>
+      <div><dt><kbd>L</kbd> <kbd>F</kbd></dt><dd>Line, freehand</dd></div>
+      <div><dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Takeoff, landing, dive, gap, hazard, note</dd></div>
+      <div><dt><kbd>E</kbd> <kbd>M</kbd> <kbd>X</kbd></dt><dd>Edit points, move, erase</dd></div>
+      <div><dt><kbd>Enter</kbd></dt><dd>Finish the line you are drawing</dd></div>
+      <div><dt><kbd>Backspace</kbd></dt><dd>Remove the last point while drawing</dd></div>
+      <div><dt><kbd>Space</kbd></dt><dd>Hold to pan while drawing freehand</dd></div>
+      <div><dt><kbd>K</kbd></dt><dd>Lay or lift the tracing paper</dd></div>
+      <div><dt><kbd>Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo (add <kbd>Shift</kbd> to redo)</dd></div>
+      <div><dt><kbd>Esc</kbd></dt><dd>Put the tool down</dd></div>
+    </dl>
+  </details>
+</aside>
+
+<main id="stage">
+  <div id="map" aria-label="Map"></div>
+
+  <!-- Registration marks, shown while the tracing paper is laid -->
+  <svg class="regmark tl" aria-hidden="true"><use href="#i-mark"/></svg>
+  <svg class="regmark tr" aria-hidden="true"><use href="#i-mark"/></svg>
+  <svg class="regmark bl" aria-hidden="true"><use href="#i-mark"/></svg>
+  <svg class="regmark br" aria-hidden="true"><use href="#i-mark"/></svg>
+
+  <button class="icon-btn map-btn only-mobile" id="map-locate" type="button" title="Go to my location" aria-label="Go to my location" aria-pressed="false">
+    <svg><use href="#i-locate"/></svg>
+  </button>
+
+  <button class="stats-chip only-mobile" id="stats-chip" type="button" aria-label="Open flight estimate">
+    <span class="chip-dist" id="chip-dist">0 m</span>
+    <span class="chip-sub" id="chip-sub">No routes yet</span>
+  </button>
+
+  <!-- Shown while drawing a line: running length, Undo point, Finish -->
+  <div id="line-bar" class="line-bar" hidden>
+    <div class="line-live"><span id="line-total">0 m</span><small id="line-leg"></small></div>
+    <button type="button" class="btn" id="line-undo"><svg><use href="#i-back"/></svg>Undo point</button>
+    <button type="button" class="btn primary" id="line-finish"><svg><use href="#i-check"/></svg>Finish</button>
+  </div>
+
+  <div id="hint" class="hint" role="status" aria-live="polite" hidden></div>
+
+  <div id="marker-sheet" class="marker-sheet" aria-label="Place a marker" hidden></div>
+
+  <!-- Phone tool dock -->
+  <nav id="dock" class="dock only-mobile" aria-label="Tools">
+    <button type="button" class="dock-btn" data-tool="line" aria-pressed="false"><svg><use href="#i-line"/></svg><span>Line</span></button>
+    <button type="button" class="dock-btn" data-tool="freehand" aria-pressed="false"><svg><use href="#i-free"/></svg><span>Freehand</span></button>
+    <button type="button" class="dock-btn" id="dock-marker" aria-pressed="false" aria-haspopup="true" aria-expanded="false"><span class="dock-ico" id="dock-marker-ico"><svg><use href="#i-pin"/></svg></span><span id="dock-marker-label">Marker</span></button>
+    <button type="button" class="dock-btn" data-tool="edit" aria-pressed="false"><svg><use href="#i-edit"/></svg><span>Edit</span></button>
+    <button type="button" class="dock-btn" data-tool="erase" aria-pressed="false"><svg><use href="#i-erase"/></svg><span>Erase</span></button>
+    <button type="button" class="dock-btn" id="dock-undo"><svg><use href="#i-undo"/></svg><span>Undo</span></button>
+    <button type="button" class="dock-btn" id="panel-open" aria-controls="sidebar" aria-expanded="false"><svg><use href="#i-menu"/></svg><span>More</span></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</main>
+<div id="backdrop" class="backdrop" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@geoman-io/leaflet-geoman-free@2.20.2/dist/leaflet-geoman.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
